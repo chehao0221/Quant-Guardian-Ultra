@@ -1,28 +1,33 @@
-import requests
-import os
+name: Quant Guardian Ultra Pipeline
+on:
+  schedule:
+    - cron: '30 6,22 * * *' # 台灣時間 14:30 (台股盤後) 與 06:00 (美股盤後)
+  workflow_dispatch:
 
-class Notifier:
-    def __init__(self):
-        self.webhooks = {
-            "tw": os.getenv("DISCORD_TW_STOCK"),
-            "us": os.getenv("DISCORD_US_STOCK"),
-            "swan": os.getenv("DISCORD_BLACK_SWAN"),
-            "news": os.getenv("DISCORD_GENERAL_NEWS")
-        }
-
-    def send(self, channel_type, title, msg, color=0x3498db):
-        url = self.webhooks.get(channel_type)
-        if not url: return
-        
-        payload = {
-            "embeds": [{
-                "title": title,
-                "description": msg,
-                "color": color,
-                "footer": {"text": "Quant-Guardian-Ultra | 盤後精準模式"}
-            }]
-        }
-        try:
-            requests.post(url, json=payload, timeout=10)
-        except Exception as e:
-            print(f"發送失敗: {e}")
+jobs:
+  run-system:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Execute
+        env:
+          DISCORD_TW_STOCK: ${{ secrets.DISCORD_TW_STOCK }}
+          DISCORD_US_STOCK: ${{ secrets.DISCORD_US_STOCK }}
+          DISCORD_BLACK_SWAN: ${{ secrets.DISCORD_BLACK_SWAN }}
+          DISCORD_GENERAL_NEWS: ${{ secrets.DISCORD_GENERAL_NEWS }}
+        run: python entrypoint.py
+      - name: Auto Sync
+        run: |
+          git config --local user.email "bot@quant.com"
+          git config --local user.name "GuardianBot"
+          git add data/
+          git commit -m "update data [$(date)]" || echo "no changes"
+          git push
