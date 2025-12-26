@@ -1,14 +1,9 @@
-import yfinance as yf
-from core.model import QuantModel
+from .base_analyst import BaseAnalyst
 
-class MarketAnalyst:
+class MarketAnalyst(BaseAnalyst):
     def __init__(self, market):
-        self.market = market
-        self.model = QuantModel(f"{market}_model")
+        super().__init__(market)
 
     def analyze(self, symbol):
-        df = yf.download(symbol, period="1y", progress=False)
-        if df.empty: return None
-        df['ret'] = df['Close'].pct_change()
-        # 這裡簡化邏輯，實際可加入你原本的 XGBoost 訓練
-        return {"symbol": symbol, "price": df['Close'].iloc[-1], "pred": 0.02}
+        # 調用父類別 BaseAnalyst 的 predict 方法
+        return self.predict(symbol)
