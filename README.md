@@ -12,11 +12,18 @@ Quant-Guardian-Ultra/
 │
 ├─ modules/                   # 功能擴充模組
 │  ├─ scanners/               # 數據掃描 (新聞、股價、VIX)
+│  │    ├─news.py
+│  │    └─vix_scanner.py
 │  ├─ analysts/               # AI 預測邏輯 (台股、美股)
+│  │    ├─base_analyst.py
+│  │    └─market_analyst.py
 │  └─ guardians/              # 風控邏輯 (Counterfactual, Defense)
+│  │    ├─counterfactual.py
+│  │    └─defense.py
 │
 ├─ data/                      # 數據存放
 │  ├─ history/                # 交易與預測歷史
+│  │    └─tw_history.csv
 │  ├─ models/                 # 訓練好的模型檔 (.json)
 │  └─ system/                 # 系統狀態 (state.json, .flag)
 │
