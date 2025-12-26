@@ -1,7 +1,10 @@
 name: Quant Guardian Ultra Pipeline
 on:
   schedule:
-    # 台灣時間：06:00, 08:00, 14:30, 20:30 (涵蓋台美盤前盤後)
+    # 22:00 UTC = 06:00 TW
+    # 00:00 UTC = 08:00 TW
+    # 06:30 UTC = 14:30 TW
+    # 12:00 UTC = 20:00 TW
     - cron: '0 22,0,12 * * *'
     - cron: '30 6 * * *'
   workflow_dispatch:
@@ -31,5 +34,5 @@ jobs:
           git config --local user.email "bot@quant.com"
           git config --local user.name "GuardianBot"
           git add data/
-          git commit -m "update data [$(date)]" || echo "no changes"
+          git commit -m "sync [$(date)]" || echo "no changes"
           git push
