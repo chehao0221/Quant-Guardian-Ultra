@@ -2,32 +2,39 @@ import os
 import sys
 from datetime import datetime
 from core.engine import GuardianEngine
-from core.notifier import Notifier
+from core.notifier import Notifier # 需自行建立 notifier.py 或整合
 from modules.analysts.base_analyst import BaseAnalyst
+from core.data_manager import DataManager
+
+def run_market_task(market, symbols, engine, history_path):
+    analyst = BaseAnalyst(market)
+    results = []
+    for s in symbols:
+        res = analyst.predict(s)
+        if res:
+            res['date'] = datetime.now().strftime("%Y-%m-%d")
+            results.append(res)
+    
+    # 判斷是否寫入歷史 (L3/L4 不寫入)
+    if engine.can_attack():
+        DataManager.append_history(history_path, results)
+        print(f"✅ {market} Analysis saved to history.")
+    else:
+        print(f"🛡️ {market} Analysis finished (Defense Mode: No save).")
 
 def main():
     engine = GuardianEngine()
-    notifier = Notifier()
-    
-    # 獲取當前小時 (UTC)
-    hour = datetime.utcnow().hour
-    
-    # 1. 檢查 L4 狀態
-    if engine.is_paused():
-        notifier.send_embed("🛡️ 系統防禦中", "目前處於 L4 黑天鵝冷卻期，跳過進攻分析。", color=0xE74C3C)
-        sys.exit(0)
+    hour = datetime.utcnow().hour # GitHub Actions 為 UTC
 
-    # 2. 執行分析 (範例：台股)
-    if hour == 23: # 對應台灣時間早上 07:00
-        notifier.send_text("🚀 開始台股盤前掃描...")
-        analyst = BaseAnalyst(["2330.TW", "2317.TW", "2454.TW"], name="TW")
-        results = analyst.run_inference()
-        
-        fields = []
-        for s, r in results.items():
-            fields.append({"name": s, "value": f"預測回報: `{r['pred']:+.2%}`\n現價: `{r['price']:.2f}`", "inline": True})
-        
-        notifier.send_embed("📊 台股 AI 分析報告", "根據近期數據之預測結果", fields=fields)
+    # 1. 執行新聞雷達 (假設你已將 news_radar 改為類別)
+    # 這裡可以加入檢查新聞並 update engine.set_risk 的邏輯
+
+    # 2. 判斷時段執行分析
+    if hour == 23: # 台灣 07:00
+        run_market_task("TW", ["2330.TW", "2317.TW"], engine, "data/history/tw_history.csv")
+    
+    if hour == 14: # 台灣 22:00 (美股)
+        run_market_task("US", ["AAPL", "NVDA", "TSLA"], engine, "data/history/us_history.csv")
 
 if __name__ == "__main__":
     main()
