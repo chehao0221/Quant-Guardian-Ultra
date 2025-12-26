@@ -43,6 +43,35 @@
 **免責聲明：** 本系統之 AI 預測結果僅供參考，不構成投資建議。金融市場有風險，投資需謹慎。
 
 
+Quant-Guardian-Ultra/
+│
+├─ .github/workflows/
+│  └─ main_pipeline.yml       # 核心自動化排程 (UTC+8 06:00, 08:00, 14:30, 20:00)
+│
+├─ core/                      # 核心邏輯庫
+│  ├─ engine.py               # 風控管理與 L1-L4 分級控制器
+│  ├─ model.py                # XGBoost 預測模型封裝
+│  ├─ data_manager.py         # CSV/JSON 數據讀寫中樞
+│  └─ notifier.py             # Discord 4 頻道分流發送器
+│
+├─ modules/                   # 功能組件
+│  ├─ scanners/               # 市場偵測 (News, VIX, Price)
+│  │    ├─ news.py            # 新聞爬蟲與指紋去重
+│  │    └─ vix_scanner.py     # VIX 恐慌指數監控
+│  ├─ analysts/               # AI 策略模組
+│  │    └─ market_analyst.py  # 台/美股市場趨勢分析
+│  └─ guardians/              # 守護邏輯
+│       └─ defense.py         # 極端風險防禦機制
+│
+├─ data/                      # 數據持久層
+│  ├─ history/                # 台美股分析歷史紀錄
+│  ├─ models/                 # AI 模型權重檔
+│  └─ system/                 # 系統狀態與去重 Hash (state.json)
+│
+├─ entrypoint.py              # 系統啟動入口 (智慧時間分流)
+├─ requirements.txt           # 環境依賴清單
+└─ README.md                  # 項目說明文件
+
 
 DISCORD_TW_STOCK (台股報告)
 
@@ -53,35 +82,4 @@ DISCORD_BLACK_SWAN (黑天鵝緊急警報)
 DISCORD_GENERAL_NEWS (一般市場消息)
 
 
-Quant-Guardian-Ultra/
-│
-├─ .github/workflows/
-│  └─ main_pipeline.yml       # 核心自動化排程
-│
-├─ core/                      # 核心邏輯庫 (封裝成模組)
-│  ├─ __init__.py
-│  ├─ engine.py               # 狀態管理與 L1-L4 分級控制器
-│  ├─ model.py                # XGBoost 模型封裝 (支援存取)
-│  ├─ data_manager.py         # 負責所有 CSV/JSON 的讀寫與備份
-│  └─ notifier.py             # 統一的 Discord Webhook 發送器
-│
-├─ modules/                   # 功能擴充模組
-│  ├─ scanners/               # 數據掃描 (新聞、股價、VIX)
-│  │    ├─news.py
-│  │    └─vix_scanner.py
-│  ├─ analysts/               # AI 預測邏輯 (台股、美股)
-│  │    ├─base_analyst.py
-│  │    └─market_analyst.py
-│  └─ guardians/              # 風控邏輯 (Counterfactual, Defense)
-│  │    ├─counterfactual.py
-│  │    └─defense.py
-│
-├─ data/                      # 數據存放
-│  ├─ history/                # 交易與預測歷史
-│  │    └─tw_history.csv
-│  ├─ models/                 # 訓練好的模型檔 (.json)
-│  └─ system/                 # 系統狀態 (state.json, .flag)
-│
-├─ entrypoint.py              # 統一的腳本入口
-├─ requirements.txt
-└─ README.md
+
