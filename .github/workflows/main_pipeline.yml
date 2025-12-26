@@ -1,7 +1,9 @@
 name: Quant Guardian Ultra Pipeline
 on:
   schedule:
-    - cron: '30 6,22 * * *' # 台灣時間 14:30 (台股盤後) 與 06:00 (美股盤後)
+    # 台灣時間：06:00, 08:00, 14:30, 20:30 (涵蓋台美盤前盤後)
+    - cron: '0 22,0,12 * * *'
+    - cron: '30 6 * * *'
   workflow_dispatch:
 
 jobs:
