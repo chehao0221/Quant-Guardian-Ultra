@@ -1,46 +1,28 @@
-name: Quant Guardian Ultra Pipeline
+import requests
+import os
 
-on:
-  schedule:
-    - cron: '0 * * * *'  # 每小時執行一次
-  workflow_dispatch:      # 支援手動執行
+class Notifier:
+    def __init__(self):
+        self.webhooks = {
+            "tw": os.getenv("DISCORD_TW_STOCK"),
+            "us": os.getenv("DISCORD_US_STOCK"),
+            "swan": os.getenv("DISCORD_BLACK_SWAN"),
+            "news": os.getenv("DISCORD_GENERAL_NEWS")
+        }
 
-jobs:
-  run-system:
-    runs-on: ubuntu-latest
-    
-    # 這裡很重要：給予寫入權限，否則 Auto Sync 會失敗
-    permissions:
-      contents: write
-      
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Execute Guardian Engine
-        env:
-          # 這裡綁定 4 個不同頻道的 Secrets
-          DISCORD_TW_STOCK: ${{ secrets.DISCORD_TW_STOCK }}
-          DISCORD_US_STOCK: ${{ secrets.DISCORD_US_STOCK }}
-          DISCORD_BLACK_SWAN: ${{ secrets.DISCORD_BLACK_SWAN }}
-          DISCORD_GENERAL_NEWS: ${{ secrets.DISCORD_GENERAL_NEWS }}
-        run: python entrypoint.py
-
-      - name: Auto Sync Data & Models
-        run: |
-          git config --local user.email "bot@quant.com"
-          git config --local user.name "GuardianBot"
-          # 確保 data 資料夾內的所有變動都被追蹤
-          git add data/
-          # 只有在有變動時才提交，避免噴錯
-          git commit -m "🤖 自動更新：系統狀態、模型與歷史紀錄 [$(date '+%Y-%m-%d %H:%M')]" || echo "今日無數據變動"
-          git push
+    def send(self, channel_type, title, msg, color=0x3498db):
+        url = self.webhooks.get(channel_type)
+        if not url: return
+        
+        payload = {
+            "embeds": [{
+                "title": title,
+                "description": msg,
+                "color": color,
+                "footer": {"text": "Quant-Guardian-Ultra | 盤後精準模式"}
+            }]
+        }
+        try:
+            requests.post(url, json=payload, timeout=10)
+        except Exception as e:
+            print(f"發送失敗: {e}")
