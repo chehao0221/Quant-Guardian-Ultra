@@ -1,1 +1,2 @@
-
+date,symbol,price,pred_ret,settled
+2023-10-27,2330.TW,590.0,0.025,False
