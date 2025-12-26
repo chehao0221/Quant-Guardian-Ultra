@@ -12,17 +12,19 @@ class Notifier:
 
     def send(self, channel_type, title, msg, color=0x3498db):
         url = self.webhooks.get(channel_type)
-        if not url: return
-        
+        if not url:
+            return False
+
         payload = {
             "embeds": [{
                 "title": title,
                 "description": msg,
                 "color": color,
-                "footer": {"text": "Quant-Guardian-Ultra | 盤後精準模式"}
+                "footer": {"text": "Quant-Guardian-Ultra"}
             }]
         }
         try:
-            requests.post(url, json=payload, timeout=10)
-        except Exception as e:
-            print(f"發送失敗: {e}")
+            r = requests.post(url, json=payload, timeout=10)
+            return r.status_code == 204
+        except Exception:
+            return False
