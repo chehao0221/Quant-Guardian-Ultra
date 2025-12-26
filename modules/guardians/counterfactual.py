@@ -1,7 +1,16 @@
-import pandas as pd
+import yfinance as yf
+from datetime import datetime, timedelta
 
 class CounterfactualEngine:
-    def analyze_missed_opportunity(self, history_df, real_market_data):
-        # 比對 AI 預測與實際走勢
-        # 回傳若繼續執行 AI 的模擬損益
-        return -0.0523 # 範例回傳 -5.23%
+    def __init__(self):
+        pass
+
+    def run_simulation(self, symbols):
+        """模擬 L4 期間若繼續執行的績效"""
+        results = []
+        for s in symbols:
+            data = yf.download(s, period="5d", progress=False)
+            if not data.empty:
+                perf = (data['Close'].iloc[-1] / data['Close'].iloc[0]) - 1
+                results.append({"symbol": s, "sim_ret": perf})
+        return results
