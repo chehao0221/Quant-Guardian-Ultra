@@ -1,18 +1,24 @@
-import pandas as pd
 import os
+import pandas as pd
+import json
 
 class DataManager:
     @staticmethod
-    def append_history(file_path, data_list):
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        df = pd.DataFrame(data_list)
-        if not os.path.exists(file_path):
-            df.to_csv(file_path, index=False)
-        else:
-            df.to_csv(file_path, mode='a', header=False, index=False)
+    def save_csv(path, data, mode='a'):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        df = pd.DataFrame(data)
+        header = not os.path.exists(path) or mode == 'w'
+        df.to_csv(path, index=False, mode=mode, header=header)
 
     @staticmethod
-    def load_csv(file_path):
-        if os.path.exists(file_path):
-            return pd.read_csv(file_path)
-        return pd.DataFrame()
+    def load_json(path, default=None):
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return default or {}
+
+    @staticmethod
+    def save_json(path, data):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
