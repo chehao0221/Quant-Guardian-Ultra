@@ -1,26 +1,43 @@
+import sys
+from datetime import datetime
 from core.engine import GuardianEngine
 from core.notifier import Notifier
+from core.data_manager import DataManager
 from modules.scanners.news import NewsScanner
+from modules.scanners.vix_scanner import VixScanner
 from modules.analysts.market_analyst import MarketAnalyst
+from modules.guardians.defense import DefenseManager
 
 def main():
     engine = GuardianEngine()
     notifier = Notifier()
-    scanner = NewsScanner()
+    
+    # 1. 多維度風險掃描 (新聞 + VIX)
+    news_level, events = NewsScanner().scan()
+    vix_level = VixScanner().check_vix()
+    final_risk = max(news_level, vix_level)
+    
+    # 2. 更新系統狀態
+    if final_risk != engine.state['risk_level']:
+        engine.set_risk(final_risk, pause_hours=24 if final_risk >= 4 else 0)
+        notifier.send(f"🛡️ 系統分級更新: L{final_risk}", f"原因: 偵測到關鍵事件或 VIX 波動", color=0xe67e22)
 
-    # 1. 掃描風險
-    risk_level, events = scanner.scan()
-    if risk_level > engine.state['risk_level']:
-        engine.set_risk(risk_level, pause_hours=24 if risk_level==4 else 0)
-        notifier.send("⚠️ 風險等級提升", f"偵測到關鍵事件，系統升級至 L{risk_level}", color=0xe74c3c)
-
-    # 2. 執行進攻 (判斷是否處於 L4 暫停)
-    if not engine.is_paused():
-        tw_analyst = MarketAnalyst("TW")
-        res = tw_analyst.analyze("2330.TW")
-        notifier.send("📊 AI 預測報告", f"TSMC 預期回報: {res['pred']:.2%}", color=0x2ecc71)
+    # 3. 根據狀態執行任務
+    if engine.is_paused():
+        # L4: 執行防禦性回報
+        DefenseManager().run_defense_report()
     else:
-        notifier.send("🛡️ 防禦模式", "L4 狀態中，暫停 AI 預測寫入", color=0x95a5a6)
+        # L1-L3: 執行 AI 分析
+        hour = datetime.utcnow().hour
+        market = "TW" if hour == 23 else "US" # 依照時間決定市場
+        symbols = ["2330.TW", "TSLA", "NVDA"] # 範例清單
+        
+        analyst = MarketAnalyst(market)
+        for s in symbols:
+            res = analyst.analyze(s)
+            if res and engine.can_attack():
+                DataManager.save_csv(f"data/history/{market.lower()}_history.csv", [res])
+                notifier.send(f"📈 {market} AI 預測點擊", f"{s} 現價: {res['price']}, 預期: {res['pred']:.2%}")
 
 if __name__ == "__main__":
     main()
