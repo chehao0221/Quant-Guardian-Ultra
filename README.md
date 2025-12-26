@@ -1,3 +1,12 @@
+DISCORD_TW_STOCK (台股報告)
+
+DISCORD_US_STOCK (美股報告)
+
+DISCORD_BLACK_SWAN (黑天鵝緊急警報)
+
+DISCORD_GENERAL_NEWS (一般市場消息)
+
+
 Quant-Guardian-Ultra/
 │
 ├─ .github/workflows/
