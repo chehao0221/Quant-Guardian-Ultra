@@ -5,25 +5,30 @@ import pytz
 from core import GuardianEngine, Notifier
 from modules.scanners.news import NewsScanner
 from modules.scanners.vix_scanner import VixScanner
+from modules.guardians.defense import DefenseManager
 from modules.analysts.market_analyst import MarketAnalyst
 
 def main():
     engine = GuardianEngine()
     notifier = Notifier()
 
-    tw_tz = pytz.timezone("Asia/Taipei")
-    now = datetime.now(tw_tz)
+    tz = pytz.timezone("Asia/Taipei")
+    now = datetime.now(tz)
     h = now.hour
 
+    # --- 1️⃣ 風險掃描 ---
     news_lv, news_list = NewsScanner().scan()
     vix_lv = VixScanner().check_vix()
+    defense_lv = DefenseManager().evaluate()
+
+    risk_lv = max(news_lv, vix_lv, defense_lv)
 
     if news_list:
         content = "".join(news_list)
         news_hash = hashlib.md5(content.encode()).hexdigest()
 
         if engine.state.get("last_news_hash") != news_hash:
-            if max(news_lv, vix_lv) >= 4:
+            if risk_lv >= 4:
                 engine.set_risk(4, pause_hours=8)
                 notifier.send(
                     "swan",
@@ -42,20 +47,31 @@ def main():
             engine.state["last_news_hash"] = news_hash
             engine.save_state()
 
+    # --- 2️⃣ AI 分析 ---
     if not engine.is_paused():
         if h == 14:
             analyst = MarketAnalyst("TW")
             for s in ["2330.TW", "2317.TW", "2454.TW"]:
                 res = analyst.analyze(s)
                 if res:
-                    notifier.send("tw", f"📈 {s}", f"{res['price']} / {res['pred']:.2%}")
+                    notifier.send(
+                        "tw",
+                        f"📈 台股盤後：{s}",
+                        f"收盤價：{res['price']}\n預測報酬：{res['pred']:.2%}",
+                        color=0x2ecc71
+                    )
 
         if h == 6:
             analyst = MarketAnalyst("US")
             for s in ["NVDA", "TSLA", "AAPL"]:
                 res = analyst.analyze(s)
                 if res:
-                    notifier.send("us", f"🇺🇸 {s}", f"{res['price']} / {res['pred']:.2%}")
+                    notifier.send(
+                        "us",
+                        f"🇺🇸 美股盤後：{s}",
+                        f"收盤價：{res['price']}\n預測報酬：{res['pred']:.2%}",
+                        color=0x3498db
+                    )
 
 if __name__ == "__main__":
     main()
