@@ -42,7 +42,7 @@
 ---
 **免責聲明：** 本系統之 AI 預測結果僅供參考，不構成投資建議。金融市場有風險，投資需謹慎。
 
-
+```
 Quant-Guardian-Ultra/
 │
 ├─ .github/workflows/
@@ -71,7 +71,7 @@ Quant-Guardian-Ultra/
 ├─ entrypoint.py              # 系統啟動入口 (智慧時間分流)
 ├─ requirements.txt           # 環境依賴清單
 └─ README.md                  # 項目說明文件
-
+```
 
 DISCORD_TW_STOCK (台股報告)
 
