@@ -1,19 +1,24 @@
 import feedparser
 import hashlib
-from core.data_manager import DataManager
+import json
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+STATE_FILE = os.path.join(BASE_DIR, "data", "system", "state.json")
 
 class NewsScanner:
-    def __init__(self):
-        self.data_manager = DataManager()
-
     def scan(self):
         feed = feedparser.parse(
             "https://news.google.com/rss/search?q=股市+崩盤+戰爭+黑天鵝&hl=zh-TW&gl=TW"
         )
 
-        state = self.data_manager.load_state()
+        # === Load state.json（若不存在就初始化）===
+        if os.path.exists(STATE_FILE):
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                state = json.load(f)
+        else:
+            state = {}
 
-        # 相容舊結構
         news_seen = state.get("news_seen", [])
         if not isinstance(news_seen, list):
             news_seen = []
@@ -27,23 +32,24 @@ class NewsScanner:
             if not any(kw in entry.title for kw in keywords):
                 continue
 
-            # === 新聞 hash（標題即可）===
             news_hash = hashlib.md5(entry.title.encode("utf-8")).hexdigest()
 
-            # 已播過 → 跳過
             if news_hash in news_seen:
                 continue
 
-            # 新聞是新的
             level = 4
             news_titles.append(entry.title)
-
             news_seen.append(news_hash)
 
-        # 限制 cache 長度（防無限成長）
+        # cache 上限
         news_seen = news_seen[-50:]
 
+        # 回寫 state（向下相容）
         state["news_seen"] = news_seen
-        self.data_manager.save_state(state)
+        if news_seen:
+            state["last_news_hash"] = news_seen[-1]
+
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
 
         return level, news_titles
